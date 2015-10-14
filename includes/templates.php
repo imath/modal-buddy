@@ -24,8 +24,6 @@ function modal_buddy_title() {
 	 * Get the modale iframe title tag
 	 *
 	 * @since  1.0.0
-	 *
-	 * @return string the title tag for the modal iframe
 	 */
 	function modal_buddy_get_title() {
 		$title = _x( 'Modal Buddy', 'Modal Buddy default title', 'modal-buddy' );
@@ -64,8 +62,6 @@ function modal_buddy_content() {
  * Output a modal link
  *
  * @since  1.0.0
- *
- * @param  array  $args the attributes of the BuddyPress modal
  */
 function modal_buddy_link( $args = array() ) {
 	echo modal_buddy_get_link( $args );
@@ -200,10 +196,12 @@ function modal_buddy_link( $args = array() ) {
  * Get the header edit avatar/cover image button
  *
  * @since  1.0.0
- *
- * @return string HTML output
  */
 function modal_buddy_get_edit_button( $args = array(), $type = 'avatar' ) {
+	if ( empty( $type ) ) {
+		return false;
+	}
+
 	// Get the button
 	$button = bp_parse_args( $args, array(
 		'id'                => '',
@@ -216,7 +214,7 @@ function modal_buddy_get_edit_button( $args = array(), $type = 'avatar' ) {
 		'link_text'         => '',
 		'link_title'        => '',
 		'link_class'        => 'modal-buddy'
-	), 'modal_buddy_get_avatar_button' );
+	), "modal_buddy_get_{$type}_button" );
 
 	if ( empty( $button['component'] ) || empty( $button['link_href'] ) ) {
 		return false;
@@ -339,6 +337,10 @@ function modal_buddy_avatar_button() {
 			'link_text'     => $modal_params['modal_title'],
 			'link_title'    => $modal_params['modal_title'],
 		);
+
+	// Any other single item!
+	} else {
+		$button_args = apply_filters( 'modal_buddy_avatar_button_single_item', $button_args );
 	}
 
 	// No need to carry on if the button args are not ready
@@ -475,6 +477,9 @@ function modal_buddy_cover_image_button() {
 			'link_text'     => $modal_params['modal_title'],
 			'link_title'    => $modal_params['modal_title'],
 		);
+	// Any other single item!
+	} else {
+		$button_args = apply_filters( 'modal_buddy_cover_image_button_single_item', $button_args );
 	}
 
 	// No need to carry on if the button args are not ready

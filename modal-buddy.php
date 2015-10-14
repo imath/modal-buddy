@@ -6,7 +6,7 @@
  * @package   Modal Buddy
  * @author    imath
  * @license   GPL-2.0+
- * @link      http://buddypress.org
+ * @link      https://imathi.eu
  *
  * @buddypress-plugin
  * Plugin Name:       Modal Buddy
@@ -53,6 +53,8 @@ class Modal_Buddy {
 
 	/**
 	 * Return an instance of this class.
+	 *
+	 * @since 1.0.0
 	 */
 	public static function start() {
 
@@ -66,6 +68,8 @@ class Modal_Buddy {
 
 	/**
 	 * Sets some globals for the plugin
+	 *
+	 * @since 1.0.0
 	 */
 	private function setup_globals() {
 		/** Plugin globals ********************************************/
@@ -88,20 +92,10 @@ class Modal_Buddy {
 		$this->config = $this->network_check();
 	}
 
-	private function includes() {
-		require( $this->includes_dir . 'functions.php' );
-		require( $this->includes_dir . 'screens.php'   );
-		require( $this->includes_dir . 'templates.php' );
-		require( $this->includes_dir . 'actions.php'   );
-
-		// Make sure to be in an admin screen
-		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
-			require( $this->includes_dir . 'admin.php' );
-		}
-	}
-
 	/**
 	 * Checks BuddyPress version
+	 *
+	 * @since 1.0.0
 	 */
 	public function version_check() {
 		// taking no risk
@@ -156,6 +150,27 @@ class Modal_Buddy {
 		$config['network_active'] = isset( $network_plugins[ $this->basename ] );
 
 		return $config;
+	}
+
+	/**
+	 * Include needed files
+	 *
+	 * @since 1.0.0
+	 */
+	private function includes() {
+		if ( ! $this->version_check() || ! $this->root_blog_check() || ! $this->config['network_status'] ) {
+			return;
+		}
+
+		require( $this->includes_dir . 'functions.php' );
+		require( $this->includes_dir . 'screens.php'   );
+		require( $this->includes_dir . 'templates.php' );
+		require( $this->includes_dir . 'actions.php'   );
+
+		// Make sure to be in an admin screen
+		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
+			require( $this->includes_dir . 'admin.php' );
+		}
 	}
 
 	/**

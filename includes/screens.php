@@ -50,7 +50,7 @@ function modal_buddy_screen() {
 
 	// Do what you need!
 	} else {
-		$has_access = apply_filters( 'modal_buddy_screen_object', false );
+		$has_access = apply_filters( 'modal_buddy_screen_has_access', false );
 	}
 
 	if ( ! empty( $has_access ) ) {
