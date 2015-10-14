@@ -10,15 +10,8 @@
  * @subpackage templates
  */
 
-// Check nonce.
-$nonce_check = false;
-if ( isset( $_REQUEST['_modal-buddy_nonce'] ) ) {
-	$nonce_check = wp_verify_nonce( $_REQUEST['_modal-buddy_nonce'], 'modal_buddy_iframe' );
-}
-
-if ( ! $nonce_check ) {
-	wp_die( __( 'You are not allowed to directly access to this page.', 'modal-buddy') , __( 'Modal Buddy Failure', 'modal-buddy' ), 403 );
-}
+// Are we safe ?
+modal_buddy_is_safe();
 
 // Check if the modal was opened from an Admin page
 $is_admin = false;

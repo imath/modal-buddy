@@ -12,11 +12,9 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Enqueue scripts for the BuddyPress modal iframe
+ * Enqueue scripts/styles specific to the Modal Buddy
  *
  * @since  1.0.0
- *
- * @param  bool $is_admin  wether the context is wp-admin or not
  */
 function modal_buddy_enqueue_scripts( $is_admin = false ) {
 	$admin = '';
@@ -29,6 +27,7 @@ function modal_buddy_enqueue_scripts( $is_admin = false ) {
 	}
 
 	if ( true === $is_admin ) {
+		// Clean up styles
 		foreach ( wp_styles()->queue as $css_handle ) {
 			wp_dequeue_style( $css_handle );
 		}

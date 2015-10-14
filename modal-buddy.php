@@ -109,11 +109,13 @@ class Modal_Buddy {
 			return false;
 		}
 
-		return self::$bp_db_version_required === bp_get_db_version();
+		return self::$bp_db_version_required <= bp_get_db_version();
 	}
 
 	/**
 	 * Checks if current blog is the one where BuddyPress is activated
+	 *
+	 * @since 1.0.0
 	 */
 	public function root_blog_check() {
 		if ( ! function_exists( 'bp_get_root_blog_id' ) ) {
@@ -129,6 +131,8 @@ class Modal_Buddy {
 
 	/**
 	 * Checks if current blog is the one where BuddyPress is activated
+	 *
+	 * @since 1.0.0
 	 */
 	public function network_check() {
 		/*
@@ -156,6 +160,8 @@ class Modal_Buddy {
 
 	/**
 	 * Set hooks
+	 *
+	 * @since 1.0.0
 	 */
 	private function setup_hooks() {
 		// This plugin && BuddyPress share the same config & BuddyPress version is ok
@@ -163,46 +169,27 @@ class Modal_Buddy {
 			// Register the template directory
 			add_action( 'bp_register_theme_directory', array( $this, 'register_template_dir' )    );
 
+			// Set and locate the Modal Buddy
+			add_action( 'bp_init',             array( $this, 'set_modal'    ),     3 );
+			add_filter( 'bp_located_template', array( $this, 'locate_modal' ), 10, 2 );
+
+			// Register the Javascript and the stylesheet
 			add_filter( 'bp_core_register_common_scripts', array( $this, 'register_script' ) );
 			add_filter( 'bp_core_register_common_styles',  array( $this, 'register_style'  ) );
 
-			add_filter( 'bp_located_template', array( $this, 'locate_modal' ), 10, 2 );
-
-			add_action( 'bp_init', array( $this, 'set_modal' ), 3 );
+		// There's something wrong, inform the Administrator
 		} else {
 			add_action( $this->config['network_active'] ? 'network_admin_notices' : 'admin_notices', array( $this, 'admin_warning' ) );
 		}
 
-		// loads the languages..
+		// load the languages..
 		add_action( 'bp_init', array( $this, 'load_textdomain' ), 5 );
-	}
-
-	public function set_modal() {
-		$bp = buddypress();
-
-		if ( isset( $bp->unfiltered_uri ) && array_search( 'modal-buddy', $bp->unfiltered_uri ) ) {
-			$this->is_modal = true;
-
-			add_filter( 'show_admin_bar', '__return_false' );
-			remove_action( 'bp_enqueue_scripts', 'bp_core_avatar_scripts' );
-
-			remove_action( 'bp_enqueue_scripts', 'bp_core_cover_image_scripts' );
-			remove_action( 'bp_enqueue_scripts', 'bp_add_cover_image_inline_css', 11 );
-		}
-	}
-
-	public function locate_modal( $located = '', $filtered = array() ) {
-		if ( $this->is_modal ) {
-			$located = bp_locate_template( reset( $filtered ) );
-		}
-
-		return $located;
 	}
 
 	/**
 	 * Register the template dir into BuddyPress template stack
 	 *
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	public function register_template_dir() {
 		bp_register_template_stack( array( $this, 'template_dir' ),  20 );
@@ -211,7 +198,7 @@ class Modal_Buddy {
 	/**
 	 * Get the template dir
 	 *
-	 * @since 1.1.0
+	 * @since 1.0.0
 	 */
 	public function template_dir() {
 		if ( ! $this->is_modal ) {
@@ -221,6 +208,50 @@ class Modal_Buddy {
 		return apply_filters( 'modal_buddy_templates_dir', $this->templates_dir );
 	}
 
+	/**
+	 * Just after BuddyPress parsed the requested UI, checks if a Modal Buddy
+	 * is requested
+	 *
+	 * @since 1.0.0
+	 */
+	public function set_modal() {
+		$bp = buddypress();
+
+		if ( isset( $bp->unfiltered_uri ) && array_search( 'modal-buddy', $bp->unfiltered_uri ) ) {
+			$this->is_modal = true;
+
+			// No Admin Bar into the iFrame!
+			add_filter( 'show_admin_bar', '__return_false' );
+
+			// We will enqueue the script later
+			remove_action( 'bp_enqueue_scripts', 'bp_core_avatar_scripts' );
+
+			// We will enqueue the script later
+			remove_action( 'bp_enqueue_scripts', 'bp_core_cover_image_scripts' );
+
+			// No need to include this css
+			remove_action( 'bp_enqueue_scripts', 'bp_add_cover_image_inline_css', 11 );
+		}
+	}
+
+	/**
+	 * Use the modal template when the Modal Buddy is requested
+	 *
+	 * @since 1.0.0
+	 */
+	public function locate_modal( $located = '', $filtered = array() ) {
+		if ( $this->is_modal ) {
+			$located = bp_locate_template( reset( $filtered ) );
+		}
+
+		return $located;
+	}
+
+	/**
+	 * Register the Javascript
+	 *
+	 * @since 1.0.0
+	 */
 	public function register_script( $bp_scripts = array() ) {
 		return array_merge( $bp_scripts, array(
 			'modal-buddy' => array(
@@ -231,6 +262,11 @@ class Modal_Buddy {
 		) );
 	}
 
+	/**
+	 * Register the Stylesheet
+	 *
+	 * @since 1.0.0
+	 */
 	public function register_style( $bp_styles = array() ) {
 		return array_merge( $bp_styles, array(
 			'modal-buddy' => array(
@@ -242,6 +278,8 @@ class Modal_Buddy {
 
 	/**
 	 * Display a message to admin in case config is not as expected
+	 *
+	 * @since 1.0.0
 	 */
 	public function admin_warning() {
 		$warnings = array();
@@ -271,6 +309,8 @@ class Modal_Buddy {
 
 	/**
 	 * Loads the translation files
+	 *
+	 * @since 1.0.0
 	 */
 	public function load_textdomain() {
 		// Traditional WordPress plugin locale filter
@@ -287,13 +327,12 @@ class Modal_Buddy {
 		// Look in local /wp-content/plugins/modal-buddy/languages/ folder
 		load_textdomain( $this->domain, $mofile_local );
 	}
-
 }
+
+endif;
 
 // Let's start !
 function modal_buddy() {
 	return Modal_Buddy::start();
 }
 add_action( 'bp_include', 'modal_buddy', 9 );
-
-endif;

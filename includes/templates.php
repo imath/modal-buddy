@@ -104,7 +104,7 @@ function modal_buddy_link( $args = array() ) {
 			'modal_action' => '',
 			'link_title'   => array(),
 			'link_title'   => '',
-			'link_text'    => __( 'Open window', 'buddypress' ),
+			'link_text'    => __( 'Open window', 'modal-buddy' ),
 			'html'         => true,
 		), 'modal_buddy_link' );
 
@@ -197,12 +197,34 @@ function modal_buddy_link( $args = array() ) {
 	}
 
 /**
+ * Is the Avatar self profile's button disabled ?
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_user_avatar_button_is_disabled() {
+	$is_disabled = (bool) ! bp_is_my_profile();
+
+	if ( false === $is_disabled ) {
+		$is_disabled = ! bp_is_active( 'xprofile' ) || ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || ! bp_disable_avatar_uploads();
+	}
+
+	/**
+	 * Filters here to allow/disallow the Self profile header's Avatar button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool $is_disabled False if the button is enabled. True otherwise.
+	 */
+	return apply_filters( 'modal_buddy_user_avatar_button_is_disabled', $is_disabled );
+}
+
+/**
  * Output the self profile edit avatar button
  *
  * @since  1.0.0
  */
 function modal_buddy_user_avatar_button() {
-	if ( ! bp_is_my_profile() ) {
+	if ( modal_buddy_user_avatar_button_is_disabled() ) {
 		return;
 	}
 
@@ -224,7 +246,7 @@ add_action( 'bp_member_header_actions', 'modal_buddy_user_avatar_button' );
 			'object'        => 'user',
 			'width'         => 800,
 			'height'        => 480,
-			'modal_title'   => __( 'Edit Profile Photo', 'buddypress' ),
+			'modal_title'   => __( 'Edit Profile Photo', 'modal-buddy' ),
 			'modal_action'  => 'change-avatar',
 			'html'          => false,
 		) );
@@ -238,8 +260,8 @@ add_action( 'bp_member_header_actions', 'modal_buddy_user_avatar_button' );
 			'wrapper_class'     => 'js-self-profile-button edit-profile-photo-button',
 			'wrapper_id'        => 'edit-profile-photo-button-' . bp_loggedin_user_id(),
 			'link_href'         => esc_url( $modal_link ),
-			'link_text'         => __( 'Edit Profile Photo', 'buddypress' ),
-			'link_title'        => __( 'Edit Profile Photo', 'buddypress' ),
+			'link_text'         => __( 'Edit Profile Photo', 'modal-buddy' ),
+			'link_title'        => __( 'Edit Profile Photo', 'modal-buddy' ),
 			'link_class'        => 'modal-buddy'
 		);
 
@@ -254,17 +276,18 @@ add_action( 'bp_member_header_actions', 'modal_buddy_user_avatar_button' );
 	}
 
 /**
- * Output the Edit avatar template part for the user modal
+ * Output the Edit avatar template part for the user/group modal
  *
  * @since 1.0.0
  */
-function modal_buddy_user_avatar_iframe() {
+function modal_buddy_avatar_iframe() {
 	// Enqueue the Attachments scripts for the Avatar UI
 	bp_attachments_enqueue_scripts( 'BP_Attachment_Avatar' );
 	?>
 
-	<h1><?php esc_html_e( 'Edit Profile Photo', 'buddypress' ); ?></h1>
+	<h1><?php esc_html_e( 'Edit Photo', 'modal-buddy' ); ?></h1>
 
 	<?php bp_attachments_get_template_part( 'avatars/index' );
 }
-add_action( 'modal_buddy_content_change-avatar', 'modal_buddy_user_avatar_iframe' );
+add_action( 'modal_buddy_content_change-avatar', 'modal_buddy_avatar_iframe' );
+add_action( 'modal_buddy_content_group-avatar',  'modal_buddy_avatar_iframe' );
