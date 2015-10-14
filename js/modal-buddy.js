@@ -181,24 +181,26 @@
 	/**
 	 * Update the cover image
 	 *
-	 * @param  {string} cover_url The url of the cover image
+	 * @param  {object} data the Cover Image Model
 	 */
 	updateCoverImage = function( data ) {
-		console.log( data.attributes );
-		/*if ( 'undefined' === typeof event.cover_image ||
-			 'undefined' === typeof event.object      ||
-			 'undefined' === typeof event.item_id
-		) {
+		if ( 'undefined' === typeof data.attributes ) {
 			return;
 		}
 
+		var bground = 'none';
+
+		if ( data.attributes.url ) {
+			bground = 'url( ' + data.attributes.url + ' )'
+		}
+
 		$( '#header-cover-image' ).css( {
-			'background-image': 'url( ' + event.cover_image + ' ) '
+			'background-image': bground
 		} );
 
 		if ( $( '.bp-cover-image-preview' ).length ) {
 
-			if ( ! event.cover_image ) {
+			if ( ! data.attributes.url ) {
 				$( '.bp-cover-image-preview' ).addClass( 'hide' );
 				$( '.bp-cover-image-preview' ).removeClass( 'thickbox' );
 			} else {
@@ -206,8 +208,8 @@
 				$( '.bp-cover-image-preview' ).removeClass( 'hide' );
 			}
 
-			$( '.bp-cover-image-preview' ).prop( 'href', event.cover_image );
-		}*/
+			$( '.bp-cover-image-preview' ).prop( 'href', data.attributes.url );
+		}
 	};
 
 } )( jQuery );

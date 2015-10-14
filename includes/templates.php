@@ -197,6 +197,44 @@ function modal_buddy_link( $args = array() ) {
 	}
 
 /**
+ * Get the header edit avatar/cover image button
+ *
+ * @since  1.0.0
+ *
+ * @return string HTML output
+ */
+function modal_buddy_get_edit_button( $args = array(), $type = 'avatar' ) {
+	// Get the button
+	$button = bp_parse_args( $args, array(
+		'id'                => '',
+		'component'         => 'xprofile',
+		'must_be_logged_in' => true,
+		'block_self'        => false,
+		'wrapper_class'     => '',
+		'wrapper_id'        => '',
+		'link_href'         => '',
+		'link_text'         => '',
+		'link_title'        => '',
+		'link_class'        => 'modal-buddy'
+	), 'modal_buddy_get_avatar_button' );
+
+	if ( empty( $button['component'] ) || empty( $button['link_href'] ) ) {
+		return false;
+	}
+
+	/**
+	 * Filters the HTML for the edit avatar button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $button HTML markup for edit avatar button.
+	 */
+	return bp_get_button( apply_filters( "modal_buddy_get_{$type}_button", $button, $args ) );
+}
+
+/** Avatar ********************************************************************/
+
+/**
  * Is the Avatar self profile's button disabled ?
  *
  * @since  1.0.0
@@ -205,7 +243,7 @@ function modal_buddy_user_avatar_button_is_disabled() {
 	$is_disabled = (bool) ! bp_is_my_profile();
 
 	if ( false === $is_disabled ) {
-		$is_disabled = ! bp_is_active( 'xprofile' ) || ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || ! bp_disable_avatar_uploads();
+		$is_disabled = ! bp_is_active( 'xprofile' ) || ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || bp_disable_avatar_uploads();
 	}
 
 	/**
@@ -219,29 +257,42 @@ function modal_buddy_user_avatar_button_is_disabled() {
 }
 
 /**
- * Output the self profile edit avatar button
+ * Is the Avatar group's header button disabled ?
  *
  * @since  1.0.0
  */
-function modal_buddy_user_avatar_button() {
-	if ( modal_buddy_user_avatar_button_is_disabled() ) {
-		return;
+function modal_buddy_group_avatar_button_is_disabled() {
+	if ( ! bp_is_group() ) {
+		return false;
 	}
 
-	echo modal_buddy_get_user_avatar_button();
-}
-add_action( 'bp_member_header_actions', 'modal_buddy_user_avatar_button' );
+	$is_disabled = (bool) ! groups_is_user_admin( bp_loggedin_user_id(), bp_get_current_group_id() ) && ! is_super_admin();
+
+	if ( false === $is_disabled ) {
+		$is_disabled = ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || bp_disable_group_avatar_uploads();
+	}
 
 	/**
-	 * Get the self profile edit avatar button
+	 * Filters here to allow/disallow the Group's header Avatar button.
 	 *
-	 * @since  1.0.0
+	 * @since 1.0.0
 	 *
-	 * @return string HTML output
+	 * @param bool $is_disabled False if the button is enabled. True otherwise.
 	 */
-	function modal_buddy_get_user_avatar_button() {
-		// Get the modal link
-		$modal_link = modal_buddy_get_link( array(
+	return apply_filters( 'modal_buddy_group_avatar_button_is_disabled', $is_disabled );
+}
+
+/**
+ * Output the single item header's edit avatar button
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_avatar_button() {
+	$button_args = array();
+
+	if ( bp_is_user() && ! modal_buddy_user_avatar_button_is_disabled() ) {
+		// Build the modal parameters
+		$modal_params = array(
 			'item_id'       => bp_loggedin_user_id(),
 			'object'        => 'user',
 			'width'         => 800,
@@ -249,31 +300,56 @@ add_action( 'bp_member_header_actions', 'modal_buddy_user_avatar_button' );
 			'modal_title'   => __( 'Edit Profile Photo', 'modal-buddy' ),
 			'modal_action'  => 'change-avatar',
 			'html'          => false,
-		) );
-
-		// Get the button
-		$button = array(
-			'id'                => 'edit_profile_photo',
-			'component'         => 'xprofile',
-			'must_be_logged_in' => true,
-			'block_self'        => false,
-			'wrapper_class'     => 'js-self-profile-button edit-profile-photo-button',
-			'wrapper_id'        => 'edit-profile-photo-button-' . bp_loggedin_user_id(),
-			'link_href'         => esc_url( $modal_link ),
-			'link_text'         => __( 'Edit Profile Photo', 'modal-buddy' ),
-			'link_title'        => __( 'Edit Profile Photo', 'modal-buddy' ),
-			'link_class'        => 'modal-buddy'
 		);
 
-		/**
-		 * Filters the HTML for the edit avatar button.
-		 *
-		 * @since 1.0.0
-		 *
-		 * @param string $button HTML markup for edit avatar button.
-		 */
-		return bp_get_button( apply_filters( 'modal_buddy_get_user_avatar_button', $button ) );
+		// Get the modal link
+		$modal_link = modal_buddy_get_link( $modal_params );
+
+		// Set the button arguments for the user
+		$button_args = array(
+			'id'            => 'edit_profile_photo',
+			'component'     => 'xprofile',
+			'wrapper_class' => 'js-self-profile-button edit-profile-photo-button',
+			'wrapper_id'    => 'edit-profile-photo-button-' . $modal_params['item_id'],
+			'link_href'     => esc_url( $modal_link ),
+			'link_text'     => $modal_params['modal_title'],
+			'link_title'    => $modal_params['modal_title'],
+		);
+	} elseif ( bp_is_group() && ! modal_buddy_group_avatar_button_is_disabled() ) {
+		// Build the modal parameters for the current group
+		$modal_params = array(
+			'item_id'       => groups_get_current_group(),
+			'object'        => 'group',
+			'width'         => 800,
+			'height'        => 480,
+			'modal_title'   => __( 'Edit Group Profile Photo', 'modal-buddy' ),
+			'modal_action'  => 'group-avatar',
+			'html'          => false,
+		);
+
+		// Get the modal link
+		$modal_link = modal_buddy_get_link( $modal_params );
+
+		$button_args = array(
+			'id'            => 'edit_group_photo',
+			'component'     => 'groups',
+			'wrapper_class' => 'js-self-group-button edit-group-photo-button',
+			'wrapper_id'    => 'edit-group-photo-button-' . $modal_params['item_id']->id,
+			'link_href'     => esc_url( $modal_link ),
+			'link_text'     => $modal_params['modal_title'],
+			'link_title'    => $modal_params['modal_title'],
+		);
 	}
+
+	// No need to carry on if the button args are not ready
+	if ( empty( $button_args ) ) {
+		return;
+	}
+
+	echo modal_buddy_get_edit_button( $button_args, 'avatar' );
+}
+add_action( 'bp_member_header_actions', 'modal_buddy_avatar_button' );
+add_action( 'bp_group_header_actions' , 'modal_buddy_avatar_button' );
 
 /**
  * Output the Edit avatar template part for the user/group modal
@@ -291,3 +367,139 @@ function modal_buddy_avatar_iframe() {
 }
 add_action( 'modal_buddy_content_change-avatar', 'modal_buddy_avatar_iframe' );
 add_action( 'modal_buddy_content_group-avatar',  'modal_buddy_avatar_iframe' );
+
+/** Cover Image ***************************************************************/
+
+/**
+ * Is the Cover Image self profile's button disabled ?
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_user_cover_image_button_is_disabled() {
+	$is_disabled = (bool) ! bp_is_my_profile();
+
+	if ( false === $is_disabled ) {
+		$is_disabled = ! bp_displayed_user_use_cover_image_header();
+	}
+
+	/**
+	 * Filters here to allow/disallow the Self profile header's Cover Image button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool $is_disabled False if the button is enabled. True otherwise.
+	 */
+	return apply_filters( 'modal_buddy_user_cover_image_button_is_disabled', $is_disabled );
+}
+
+/**
+ * Is the Cover Image group's header button disabled ?
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_group_cover_image_button_is_disabled() {
+	if ( ! bp_is_group() ) {
+		return false;
+	}
+
+	$is_disabled = (bool) ! groups_is_user_admin( bp_loggedin_user_id(), bp_get_current_group_id() ) && ! is_super_admin();
+
+	if ( false === $is_disabled ) {
+		$is_disabled = ! bp_group_use_cover_image_header();
+	}
+
+	/**
+	 * Filters here to allow/disallow the Group's header Cover Image button.
+	 *
+	 * @since 1.0.0
+	 *
+	 * @param bool $is_disabled False if the button is enabled. True otherwise.
+	 */
+	return apply_filters( 'modal_buddy_group_cover_image_button_is_disabled', $is_disabled );
+}
+
+/**
+ * Output the edit cover image button on single items header
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_cover_image_button() {
+	$button_args = array();
+
+	if ( bp_is_user() && ! modal_buddy_user_cover_image_button_is_disabled() ) {
+		// Build the modal parameters
+		$modal_params = array(
+			'item_id'       => bp_loggedin_user_id(),
+			'object'        => 'user',
+			'width'         => 800,
+			'height'        => 480,
+			'modal_title'   => __( 'Edit Cover Image', 'modal-buddy' ),
+			'modal_action'  => 'change-cover-image',
+			'html'          => false,
+		);
+
+		// Get the modal link
+		$modal_link = modal_buddy_get_link( $modal_params );
+
+		// Set the button arguments for the user
+		$button_args = array(
+			'id'            => 'edit_cover_image',
+			'component'     => 'xprofile',
+			'wrapper_class' => 'js-self-profile-button edit-cover-image-button',
+			'wrapper_id'    => 'edit-cover-image-button-' . $modal_params['item_id'],
+			'link_href'     => esc_url( $modal_link ),
+			'link_text'     => $modal_params['modal_title'],
+			'link_title'    => $modal_params['modal_title'],
+		);
+	} elseif ( bp_is_group() && ! modal_buddy_group_cover_image_button_is_disabled() ) {
+		// Build the modal parameters for the current group
+		$modal_params = array(
+			'item_id'       => groups_get_current_group(),
+			'object'        => 'group',
+			'width'         => 800,
+			'height'        => 480,
+			'modal_title'   => __( 'Edit Group Cover Image', 'modal-buddy' ),
+			'modal_action'  => 'group-cover-image',
+			'html'          => false,
+		);
+
+		// Get the modal link
+		$modal_link = modal_buddy_get_link( $modal_params );
+
+		$button_args = array(
+			'id'            => 'edit_group_cover_image',
+			'component'     => 'groups',
+			'wrapper_class' => 'js-self-group-button edit-group-cover-image-button',
+			'wrapper_id'    => 'edit-group-cover-image-button-' . $modal_params['item_id']->id,
+			'link_href'     => esc_url( $modal_link ),
+			'link_text'     => $modal_params['modal_title'],
+			'link_title'    => $modal_params['modal_title'],
+		);
+	}
+
+	// No need to carry on if the button args are not ready
+	if ( empty( $button_args ) ) {
+		return;
+	}
+
+	echo modal_buddy_get_edit_button( $button_args, 'cover_image' );
+}
+add_action( 'bp_member_header_actions', 'modal_buddy_cover_image_button' );
+add_action( 'bp_group_header_actions' , 'modal_buddy_cover_image_button' );
+
+/**
+ * Output the Edit Cover Image template part for the user/group modal
+ *
+ * @since 1.0.0
+ */
+function modal_buddy_cover_image_iframe() {
+	// Enqueue the Attachments scripts for the Cover Image UI
+	bp_attachments_enqueue_scripts( 'BP_Attachment_Cover_Image' );
+	?>
+
+	<h1><?php esc_html_e( 'Edit Cover Image', 'modal-buddy' ); ?></h1>
+
+	<?php bp_attachments_get_template_part( 'cover-images/index' );
+}
+add_action( 'modal_buddy_content_change-cover-image', 'modal_buddy_cover_image_iframe' );
+add_action( 'modal_buddy_content_group-cover-image',  'modal_buddy_cover_image_iframe' );

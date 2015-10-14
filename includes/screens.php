@@ -30,6 +30,8 @@ function modal_buddy_screen() {
 			$bp->current_action = sanitize_file_name( $_GET['action'] );
 		}
 
+		$has_access = bp_is_item_admin();
+
 	// Group
 	} elseif ( bp_is_group() && ( 'modal-buddy' === bp_action_variable( 0 ) || 'modal-buddy' === bp_current_action() ) ) {
 
@@ -44,11 +46,15 @@ function modal_buddy_screen() {
 			}
 		}
 
+		$has_access = bp_is_item_admin();
+
 	// Do what you need!
 	} else {
-		do_action( 'modal_buddy_screen' );
+		$has_access = apply_filters( 'modal_buddy_screen_object', false );
 	}
 
-	bp_core_load_template( 'assets/modal' );
+	if ( ! empty( $has_access ) ) {
+		bp_core_load_template( 'assets/modal' );
+	}
 }
 add_action( 'bp_screens', 'modal_buddy_screen', 0 );

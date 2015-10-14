@@ -177,6 +177,10 @@ class Modal_Buddy {
 			add_filter( 'bp_core_register_common_scripts', array( $this, 'register_script' ) );
 			add_filter( 'bp_core_register_common_styles',  array( $this, 'register_style'  ) );
 
+			// Take care of forbidden/illegal names as long as we can!
+			add_filter( 'groups_forbidden_names',    array( $this, 'restricted_name' ), 10, 1 );
+			add_filter( 'site_option_illegal_names', array( $this, 'restricted_name' ), 10, 1 );
+
 		// There's something wrong, inform the Administrator
 		} else {
 			add_action( $this->config['network_active'] ? 'network_admin_notices' : 'admin_notices', array( $this, 'admin_warning' ) );
@@ -274,6 +278,24 @@ class Modal_Buddy {
 				'dependencies' => array( 'thickbox' ),
 			),
 		) );
+	}
+
+	/**
+	 * Take care of forbidden names!
+	 *
+	 * There's still a possibility of trouble on non ms configs
+	 * if the user login is modal-buddy! But i don't want to return
+	 * an empty login filtering pre_user_login because the error message
+	 * will then be very confusing...
+	 *
+	 * @since 1.0.0
+	 */
+	public function restricted_name( $names = array() ) {
+		if ( ! in_array( $this->domain, $names ) ) {
+			$names = array_merge( $names, array( $this->domain ) );
+		}
+
+		return $names;
 	}
 
 	/**
