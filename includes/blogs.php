@@ -274,7 +274,7 @@ function modal_buddy_site_icon_avatar_template() {
 					<img src="{{data.src}}" id="avatar-crop-preview"/>
 				</div>
 				<div id="avatar-crop-actions">
-					<a class="button avatar-crop-submit" href="#"><?php esc_html_e( 'Use Site Icon', 'buddypress' ); ?></a>
+					<a class="button avatar-crop-submit" href="#"><?php esc_html_e( 'Use Site Icon', 'modal-buddy' ); ?></a>
 				</div>
 			</div>
 		<# } #>
