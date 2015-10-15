@@ -117,23 +117,6 @@ class Modal_Buddy {
 	 *
 	 * @since 1.0.0
 	 */
-	public function root_blog_check() {
-		if ( ! function_exists( 'bp_get_root_blog_id' ) ) {
-			return false;
-		}
-
-		if ( get_current_blog_id() != bp_get_root_blog_id() ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Checks if current blog is the one where BuddyPress is activated
-	 *
-	 * @since 1.0.0
-	 */
 	public function network_check() {
 		/*
 		 * network_active : this plugin is activated on the network
@@ -150,8 +133,9 @@ class Modal_Buddy {
 		$check = array( buddypress()->basename, $this->basename );
 		$network_active = array_diff( $check, array_keys( $network_plugins ) );
 
-		if ( count( $network_active ) == 1 )
+		if ( count( $network_active ) == 1 ) {
 			$config['network_status'] = false;
+		}
 
 		$config['network_active'] = isset( $network_plugins[ $this->basename ] );
 
@@ -164,7 +148,7 @@ class Modal_Buddy {
 	 * @since 1.0.0
 	 */
 	private function includes() {
-		if ( ! $this->version_check() || ! $this->root_blog_check() || ! $this->config['network_status'] ) {
+		if ( ! $this->version_check() || ! $this->config['network_status'] ) {
 			return;
 		}
 
@@ -179,7 +163,7 @@ class Modal_Buddy {
 		}
 
 		// Blog avatars!
-		if (  bp_is_active( 'blogs', 'site_logo' ) ) {
+		if ( bp_is_active( 'blogs', 'site_logo' ) ) {
 			require( $this->includes_dir . 'blogs.php' );
 		}
 	}
@@ -191,7 +175,7 @@ class Modal_Buddy {
 	 */
 	private function setup_hooks() {
 		// This plugin && BuddyPress share the same config & BuddyPress version is ok
-		if ( $this->version_check() && $this->root_blog_check() && $this->config['network_status'] ) {
+		if ( $this->version_check() && $this->config['network_status'] ) {
 			// Register the template directory
 			add_action( 'bp_register_theme_directory', array( $this, 'register_template_dir' )    );
 
@@ -336,11 +320,7 @@ class Modal_Buddy {
 			$warnings[] = sprintf( __( '%s requires at least version %s of BuddyPress.', 'modal-buddy' ), $this->name, '2.4.0' );
 		}
 
-		if ( ! bp_core_do_network_admin() && ! $this->root_blog_check() ) {
-			$warnings[] = sprintf( __( '%s requires to be activated on the blog where BuddyPress is activated.', 'modal-buddy' ), $this->name );
-		}
-
-		if ( bp_core_do_network_admin() && ! is_plugin_active_for_network( $this->basename ) ) {
+		if ( bp_is_network_activated() && ! is_plugin_active_for_network( $this->basename ) ) {
 			$warnings[] = sprintf( __( '%s and BuddyPress need to share the same network configuration.', 'modal-buddy' ), $this->name );
 		}
 

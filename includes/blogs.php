@@ -4,6 +4,10 @@
  *
  * @since 1.0.0
  *
+ * This part is a preview of:
+ * - https://buddypress.trac.wordpress.org/ticket/6544
+ * - https://buddypress.trac.wordpress.org/ticket/6026
+ *
  * @package Modal Buddy
  * @subpackage includes
  */
@@ -89,17 +93,71 @@ function modal_buddy_blog_has_avatar( $blog_id = 0 ) {
 }
 
 /**
+ * Site Icon were introduced in 4.3, this checks everything is ok
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_use_site_icon() {
+	/**
+	 * filter here to disable the "site icon avatar"
+	 *
+	 * @since  1.0.0
+	 *
+	 * @param  bool $value True to use the site icon, false otherwise.
+	 */
+	return (bool) apply_filters( 'modal_buddy_use_site_icon', function_exists( 'get_site_icon_url' ) );
+}
+
+/**
+ * Add the Backbone script to be able to set an avatar using a site icon
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_register_script( $bp_scripts = array() ) {
+	$mb = modal_buddy();
+
+	return array_merge( $bp_scripts, array(
+		'modal-buddy-site-icon' => array(
+			'file' => "{$mb->plugin_js}site-icon{$mb->minified}.js",
+			'dependencies' => array( 'bp-avatar' ),
+			'footer' => true
+		),
+	) );
+}
+add_filter( 'bp_core_register_common_scripts', 'modal_buddy_blog_register_script', 12, 1 );
+
+
+/**
+ * Add some strings to bring some feedback to the user
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_plupload_l10n( $strings = array() ) {
+	$strings['site_icon'] = array(
+		'saved'    => esc_html__( 'Success: Site Logo saved.', 'modal-buddy' ),
+		'notSaved' => esc_html__( 'Error: the Site Logo was not saved.', 'modal-buddy' ),
+		'explain'  => esc_html__( 'You can use the Site Icon to set your Site Logo.', 'modal-buddy' ),
+		'noIcon'   => esc_html__( 'The Site Icon is not set for this site. Please use the Upload tab.', 'modal-buddy' ),
+		'inUse'    => esc_html__( 'The Site Icon is already used as the Site Logo. You can either delete it or upload a new one using the corresponding tabs.', 'modal-buddy' ),
+	);
+
+	$strings['has_avatar_warning'] = __( 'If you&#39;d like to delete the existing site logo but not upload a new one, please use the delete tab.', 'modal-buddy' );
+
+	return $strings;
+}
+
+/**
  * Build the Avatar UI needed parameters to manage the site logo
  *
  * @since  1.0.0
  */
 function modal_buddy_blog_avatar_script_data( $script_data = array() ) {
 	if ( bp_is_blogs_component() && bp_is_single_item() && bp_is_current_action( 'manage' ) && 'edit-blog-logo' === bp_action_variable( 0 ) ) {
-		$blog_id = modal_buddy()->current_blog->id;
+		$blog_id = (int) modal_buddy()->current_blog->id;
 
 		$script_data['bp_params'] = array(
 			'object'     => 'blog',
-			'item_id'    => modal_buddy()->current_blog->id,
+			'item_id'    => $blog_id,
 			'has_avatar' => modal_buddy_blog_has_avatar( $blog_id ),
 			'nonces'     => array(
 				'set'    => wp_create_nonce( 'bp_avatar_cropstore' ),
@@ -114,10 +172,74 @@ function modal_buddy_blog_avatar_script_data( $script_data = array() ) {
 			3 => __( 'There was a problem deleting the site logo. Please try again.', 'modal-buddy' ),
 			4 => __( 'The site logo was deleted successfully!', 'modal-buddy' ),
 		);
+
+		if ( modal_buddy_use_site_icon() ) {
+			if ( $blog_id !== get_current_blog_id() ) {
+				switch_to_blog( $blog_id );
+			}
+
+			// Defaults to no site icon
+			$si_params = array( 'no_icon' => true );
+
+			$site_icon_id = (int) get_option( 'site_icon' );
+
+			if ( ! empty( $site_icon_id ) ) {
+				// Find the site icon size which is nearest to the avatar one
+				$src = wp_get_attachment_image_src( $site_icon_id, array(
+					bp_core_avatar_full_width(),
+					bp_core_avatar_full_height()
+				) );
+
+				if ( ! empty( $src[0] ) ) {
+					$si_params = array(
+						'id'      => $site_icon_id,
+						'src'     => $src[0],
+						'no_icon' => false,
+						'max_dim' => bp_core_avatar_full_width(),
+						'nonce'   => wp_create_nonce( 'modal_buddy_site_icon' ),
+						'in_use'  => false,
+					);
+				}
+			}
+
+			if ( ms_is_switched() ) {
+				restore_current_blog();
+			}
+
+			// Check if the site icon is already used as the site logo.
+			if ( 'site_icon' === bp_blogs_get_blogmeta( $blog_id, 'avatar_type' ) ) {
+				$si_params['in_use'] = true;
+			}
+
+			// Include specific params for the site icon
+			$script_data['bp_params']['site_icon'] = $si_params;
+
+			// Include specific scripts for the site icon
+			$script_data['extra_js'][] = 'modal-buddy-site-icon';
+		}
 	}
 
 	return $script_data;
 }
+
+/**
+ * Add the Site Icon nav to the Avatar UI
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_avatar_ui_nav( $avatar_nav = array(), $object = '' ) {
+	if ( 'blog' === $object ) {
+
+		$avatar_nav['site_icon'] = array(
+			'id' => 'site_icon',
+			'caption' => __( 'Site Icon', 'modal-buddy' ),
+			'order' => 15,
+		);
+	}
+
+	return $avatar_nav;
+}
+add_filter( 'bp_attachments_avatar_nav', 'modal_buddy_blog_avatar_ui_nav', 10, 2 );
 
 /**
  * Include the delete blog site logo _.template
@@ -135,6 +257,33 @@ function modal_buddy_delete_avatar_template() {
 add_action( 'bp_attachments_avatar_delete_template', 'modal_buddy_delete_avatar_template' );
 
 /**
+ * Include the site icon _.template
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_site_icon_avatar_template() {
+	/**
+	 * I know.. I'm a bit lazy using the same markup than the crop avatar view
+	 * but it saves me some times so...
+	 */
+	?>
+	<script id="tmpl-modal-buddy-site-icon" type="text/html">
+		<# if ( ! data.no_icon && ! data.in_use ) { #>
+			<div class="avatar-crop-management">
+				<div id="avatar-crop-pane" class="avatar" style="max-width:{{data.max_dim}}px; max-height:{{data.max_dim}}px">
+					<img src="{{data.src}}" id="avatar-crop-preview"/>
+				</div>
+				<div id="avatar-crop-actions">
+					<a class="button avatar-crop-submit" href="#"><?php esc_html_e( 'Use Site Icon', 'buddypress' ); ?></a>
+				</div>
+			</div>
+		<# } #>
+	</script>
+	<?php
+}
+add_action( 'bp_attachments_avatar_main_template', 'modal_buddy_site_icon_avatar_template' );
+
+/**
  * Make sure the current user can manage the Site logo
  *
  * @since  1.0.0
@@ -147,6 +296,136 @@ function modal_buddy_blog_can_edit_avatar( $can = false, $capability = '', $args
 	return apply_filters( 'modal_buddy_blog_can_edit_avatar', current_user_can_for_blog( (int) $args['item_id'], 'manage_options' ) );
 }
 add_filter( 'bp_attachments_current_user_can', 'modal_buddy_blog_can_edit_avatar', 10, 3 );
+
+/**
+ * Create a new site's logo out of a site icon
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_site_icon_create_avatar( $blog_id = 0, $site_icon_id = 0 ) {
+	if ( empty( $blog_id ) || empty( $site_icon_id ) ) {
+		return false;
+	}
+
+	if ( $blog_id !== get_current_blog_id() ) {
+		switch_to_blog( $blog_id );
+	}
+
+	$site_icon_img = get_attached_file( $site_icon_id );
+
+	if ( ms_is_switched() ) {
+		restore_current_blog();
+	}
+
+	if ( empty( $site_icon_img ) ) {
+		return false;
+	}
+
+	$site_icon_data = BP_Attachment::get_image_data( $site_icon_img );
+
+	if ( empty( $site_icon_data['width'] ) || empty( $site_icon_data['height'] ) ) {
+		return false;
+	}
+
+	if ( ! bp_attachments_create_item_type( 'avatar', array(
+		'item_id'   => $blog_id,
+		'object'    => 'blog',
+		'component' => 'modal_buddy_blog',
+		'image'     => $site_icon_img,
+		'crop_w'    => $site_icon_data['width'],
+		'crop_h'    => $site_icon_data['height'],
+	) ) ) {
+		return false;
+	}
+
+	// Set the avatar type.
+	bp_blogs_update_blogmeta( $blog_id, 'avatar_type', 'site_icon' );
+
+	return true;
+}
+
+/**
+ * Ajax Set a site icon as a site logo
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_ajax_set_avatar() {
+	$response = array(
+		'feedback_code' => 'notSaved',
+	);
+
+	if ( empty( $_POST['item_id'] ) || empty( $_POST['site_icon'] ) || empty( $_POST['item_object'] ) || 'blog' !== $_POST['item_object'] ) {
+		wp_send_json_error( $response );
+	}
+
+	check_ajax_referer( 'modal_buddy_site_icon', 'nonce' );
+
+	$blog_id      = absint( $_POST['item_id'] );
+	$site_icon_id = absint( $_POST['site_icon'] );
+
+	if ( ! modal_buddy_blog_site_icon_create_avatar( $blog_id, $site_icon_id ) ) {
+		wp_send_json_error( $response );
+	} else {
+		// Send the response
+		wp_send_json_success( array( 'feedback_code' => 'saved' ) );
+	}
+}
+add_action( 'wp_ajax_modal_buddy_use_site_icon', 'modal_buddy_blog_ajax_set_avatar' );
+
+/**
+ * Update the site's logo if the site icon was updated
+ *
+ * @since 1.0.0
+ */
+function modal_buddy_blog_avatar_update_site_icon( $option = 'site_icon', $value = 0 ) {
+	$site_icon_id   = (int) $value;
+	$blog_id    = get_current_blog_id();
+
+	if ( 'site_icon' !== bp_blogs_get_blogmeta( $blog_id, 'avatar_type' ) ) {
+		return;
+	}
+
+	// Delete the Site's logo
+	if ( empty( $value ) ) {
+		bp_core_delete_existing_avatar( array( 'item_id' => $blog_id, 'object' => 'blog' ) );
+
+	// Update the Site's logo
+	} else {
+		modal_buddy_blog_site_icon_create_avatar( $blog_id, $site_icon_id );
+	}
+}
+add_action( 'update_option_site_icon', 'modal_buddy_blog_avatar_update_site_icon', 10, 2 );
+
+/**
+ * When a blog logo is deleted, remove the avatar type blog meta
+ *
+ * @since  1.0.0
+ */
+function modal_buddy_blog_avatar_delete_type( $args = array() ) {
+	if ( isset( $args['object'] ) && 'blog' === $args['object'] && ! empty( $args['item_id'] ) ) {
+		bp_blogs_delete_blogmeta( $args['item_id'], 'avatar_type' );
+	}
+}
+add_action( 'bp_core_delete_existing_avatar', 'modal_buddy_blog_avatar_delete_type', 10, 1 );
+
+/**
+ * Delete the site's logo if the site icon was deleted
+ * and if the site icon was used as site's logo
+ *
+ * @since 1.0.0
+ */
+function modal_buddy_blog_avatar_delete_site_icon() {
+	$blog_id = get_current_blog_id();
+
+	// Only delete the blog's avatar if synced with site icon
+	if ( 'site_icon' !== bp_blogs_get_blogmeta( $blog_id, 'avatar_type' ) ) {
+		return;
+	}
+
+	// Remove the blog's profile photo
+	bp_core_delete_existing_avatar( array( 'item_id' => $blog_id, 'object' => 'blog' ) );
+}
+add_action( 'delete_option_site_icon', 'modal_buddy_blog_avatar_delete_site_icon' );
 
 /**
  * Set the blogs avatar uploads dir filter
@@ -185,7 +464,9 @@ function modal_buddy_blog_avatar_upload_dir( $blog_id = 0 ) {
 	}
 
 	// Set the subdir
-	$subdir  = '/blogs/' . $blog_id . '/avatar';
+	$subdir  = '/' . $attachments_upload_dir['dir'] . '/blogs/' . $blog_id . '/avatar';
+	$basedir = dirname( $attachments_upload_dir['basedir'] );
+	$baseurl = dirname( $attachments_upload_dir['baseurl'] );
 
 	/**
 	 * Filters the Blog's avatar upload directory.
@@ -195,11 +476,11 @@ function modal_buddy_blog_avatar_upload_dir( $blog_id = 0 ) {
 	 * @param array $value Array containing the path, URL, and other helpful settings.
 	 */
 	return apply_filters( 'modal_buddy_blog_avatar_upload_dir', array(
-		'path'    => $attachments_upload_dir['basedir'] . $subdir,
-		'url'     => $attachments_upload_dir['baseurl'] . $subdir,
+		'path'    => $basedir . $subdir,
+		'url'     => $baseurl . $subdir,
 		'subdir'  => $subdir,
-		'basedir' => $attachments_upload_dir['basedir'],
-		'baseurl' => $attachments_upload_dir['baseurl'],
+		'basedir' => $basedir,
+		'baseurl' => $baseurl,
 		'error'   => false
 	) );
 }
@@ -211,7 +492,7 @@ function modal_buddy_blog_avatar_upload_dir( $blog_id = 0 ) {
  * @since  1.0.0
  */
 function modal_buddy_blog_avatar_folder_dir( $folder_path = '', $item_id = 0, $object = '', $avatars_dir = '' ) {
-	if ( 'blog-avatars' !== $avatars_dir || 'blog' !== $object || empty( $item_id ) ) {
+	if ( false === strpos( $avatars_dir, 'blog' ) || 'blog' !== $object || empty( $item_id ) ) {
 		return $folder_path;
 	}
 
@@ -297,7 +578,7 @@ function modal_buddy_get_blog_link( $modal_link = '', $args = array(), $query_ar
 	}
 
 	// The blog slug
-	$slug = trim( $blog->path, '/' );
+	$slug = trim( str_replace( get_current_site()->path, '', $blog->path ), '/' );
 
 	if ( empty( $slug ) ) {
 		$slug = 'root';
@@ -355,7 +636,8 @@ add_action( 'bp_directory_blogs_actions', 'modal_buddy_blog_avatar_button' );
  * @since 1.0.0
  */
 function modal_buddy_blog_avatar_iframe() {
-	// Set Custom params for the blogs single item
+	// Set Custom strings & params for the blogs single item
+	add_filter( 'bp_attachments_get_plupload_l10n', 'modal_buddy_blog_plupload_l10n'     , 10, 1 );
 	add_filter( 'bp_attachment_avatar_script_data', 'modal_buddy_blog_avatar_script_data', 10, 1 );
 
 	// Enqueue the Attachments scripts for the Avatar UI
