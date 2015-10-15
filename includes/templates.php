@@ -161,6 +161,19 @@ function modal_buddy_link( $args = array() ) {
 			$modal_link = add_query_arg( $query_args, wp_nonce_url( trailingslashit( $user_link . 'modal-buddy' ), 'modal_buddy_iframe', '_modal-buddy_nonce' ) );
 
 		} else {
+			/**
+			 * Filter here to build a custom modal link
+			 *
+			 * @since  1.0.0
+			 *
+			 * @param  string $value      the modal link
+			 * @param  array  $r          the modal link parameter
+			 * @param  array  $query_args the query arguments to add
+			 */
+			$modal_link = apply_filters( 'modal_buddy_get_object_link', '', $r, $query_args );
+		}
+
+		if ( empty( $modal_link ) ) {
 			return;
 		}
 

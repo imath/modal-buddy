@@ -90,6 +90,13 @@ class Modal_Buddy {
 
 		/** Plugin config ********************************************/
 		$this->config = $this->network_check();
+
+		/** Blogs Component *****************************************/
+		if ( is_multisite() && bp_is_active( 'blogs' ) ) {
+			// Allow people to disable the Site logo feature using
+			// add_filter( 'bp_is_blogs_site_logo_active', '__return_false' )
+			buddypress()->blogs->features = array( 'site_logo' );
+		}
 	}
 
 	/**
@@ -170,6 +177,11 @@ class Modal_Buddy {
 		// Make sure to be in an admin screen
 		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
 			require( $this->includes_dir . 'admin.php' );
+		}
+
+		// Blog avatars!
+		if (  bp_is_active( 'blogs', 'site_logo' ) ) {
+			require( $this->includes_dir . 'blogs.php' );
 		}
 	}
 
