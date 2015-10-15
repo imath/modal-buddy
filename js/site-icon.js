@@ -40,7 +40,7 @@ window.bp = window.bp || {};
 			bp.Avatar.views.add( { id: 'site_icon', view: AvatarSiteIconView } );
 
 			// Display it
-	        AvatarSiteIconView.inject( '.bp-avatar' );
+			AvatarSiteIconView.inject( '.bp-avatar' );
 		},
 
 		updateSiteIcon: function( model ) {
