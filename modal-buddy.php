@@ -1,7 +1,6 @@
 <?php
 /**
- * Utility to add a modal Window for BuddyPress objects
- *
+ * Modal Boxes for BuddyPress objects
  *
  * @package   Modal Buddy
  * @author    imath
@@ -11,7 +10,7 @@
  * @buddypress-plugin
  * Plugin Name:       Modal Buddy
  * Plugin URI:        https://github.com/imath/modal-buddy
- * Description:       Utility to add a modal Window for BuddyPress objects
+ * Description:       Modal Boxes for BuddyPress objects
  * Version:           1.0.0-alpha
  * Author:            imath
  * Author URI:        https://github.com/imath
