@@ -8,7 +8,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2015-10-16 00:14+0100\n"
+"PO-Revision-Date: 2015-10-22 20:50+0100\n"
 "Last-Translator: imath <mathchristo@yahoo.fr>\n"
 "Language-Team: \n"
 "X-Generator: Poedit 1.7.1\n"
@@ -75,7 +75,7 @@ msgstr "Succès: Logo du site enregistré."
 
 #: includes/blogs.php:138
 msgid "Error: the Site Logo was not saved."
-msgstr "Erreur: l&#39;enregistrement du logo du site a échouée."
+msgstr "Erreur: l&#39;enregistrement du logo du site a échoué."
 
 #: includes/blogs.php:139
 msgid "You can use the Site Icon to set your Site Logo."
