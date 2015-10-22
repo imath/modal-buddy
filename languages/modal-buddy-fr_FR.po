@@ -4,16 +4,16 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Modal Buddy 1.0.0-alpha\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/modal-buddy\n"
-"POT-Creation-Date: 2015-10-15 21:55:02+00:00\n"
+"POT-Creation-Date: 2015-10-22 19:05:54+00:00\n"
+"PO-Revision-Date: 2015-10-22 21:07+0100\n"
+"Last-Translator: imath <mathchristo@yahoo.fr>\n"
+"Language-Team: \n"
+"Language: fr\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"PO-Revision-Date: 2015-10-22 20:50+0100\n"
-"Last-Translator: imath <mathchristo@yahoo.fr>\n"
-"Language-Team: \n"
 "X-Generator: Poedit 1.7.1\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
-"Language: fr\n"
 
 #: includes/admin.php:164
 msgctxt "xprofile user-admin edit screen"
@@ -163,9 +163,13 @@ msgstr "Modifier Logo"
 msgid "You are not allowed to directly access to this page."
 msgstr "Cette action n&#39;est pas autorisée."
 
-#: includes/functions.php:35
+#: includes/functions.php:35 includes/screens.php:59
 msgid "Modal Buddy Failure"
 msgstr "Echec de Modal Buddy"
+
+#: includes/screens.php:59
+msgid "You are not allowed to access to this page."
+msgstr "Vous n&#39;êtes pas autorisé à accéder à cette page."
 
 #: includes/templates.php:29
 msgctxt "Modal Buddy default title"

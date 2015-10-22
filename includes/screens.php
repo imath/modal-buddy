@@ -55,6 +55,8 @@ function modal_buddy_screen() {
 
 	if ( ! empty( $has_access ) ) {
 		bp_core_load_template( 'assets/modal' );
+	} else {
+		wp_die( __( 'You are not allowed to access to this page.', 'modal-buddy') , __( 'Modal Buddy Failure', 'modal-buddy' ), 403 );
 	}
 }
 add_action( 'bp_screens', 'modal_buddy_screen', 0 );

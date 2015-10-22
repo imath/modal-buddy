@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Modal Buddy 1.0.0-alpha\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/modal-buddy\n"
-"POT-Creation-Date: 2015-10-15 21:55:02+00:00\n"
+"POT-Creation-Date: 2015-10-22 19:05:54+00:00\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -141,8 +141,12 @@ msgstr ""
 msgid "You are not allowed to directly access to this page."
 msgstr ""
 
-#: includes/functions.php:35
+#: includes/functions.php:35 includes/screens.php:59
 msgid "Modal Buddy Failure"
+msgstr ""
+
+#: includes/screens.php:59
+msgid "You are not allowed to access to this page."
 msgstr ""
 
 #: includes/templates.php:29
