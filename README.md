@@ -5,7 +5,7 @@ This is an experimental plugin to help me have your feedback on some patches i'v
 - [#6604](https://buddypress.trac.wordpress.org/ticket/6604) A Modal box to manage Avatars & Cover Images (main purpose of the plugin)
 - [#6544](https://buddypress.trac.wordpress.org/ticket/6544) & [#192](https://buddypress.trac.wordpress.org/ticket/192) Use this modal to set Sites Avatars.
 
-Here are some video to demonstrate the plugin:
+Here are some videos to demonstrate the plugin:
 - [Modal for Groups & Members profiles](https://vimeo.com/138356216)
 - [Modal for Sites Avatars](https://vimeo.com/143306220)
 
