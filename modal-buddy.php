@@ -1,6 +1,6 @@
 <?php
 /**
- * Modal Boxes for BuddyPress objects
+ * Modals to set Avatars for BuddyPress objects.
  *
  * @package   Modal Buddy
  * @author    imath
@@ -10,8 +10,8 @@
  * @buddypress-plugin
  * Plugin Name:       Modal Buddy
  * Plugin URI:        https://github.com/imath/modal-buddy
- * Description:       Modal Boxes for BuddyPress objects
- * Version:           1.0.0-alpha
+ * Description:       Modals to set Avatars for BuddyPress objects.
+ * Version:           1.0.0
  * Author:            imath
  * Author URI:        https://github.com/imath
  * Text Domain:       modal-buddy
@@ -22,15 +22,16 @@
  */
 
 // Exit if accessed directly
-defined( 'ABSPATH' ) || exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
-if ( ! class_exists( 'Modal_Buddy' ) ) :
 /**
  * Main Class
  *
  * @since 1.0.0
  */
-class Modal_Buddy {
+final class Modal_Buddy {
 	/**
 	 * Instance of this class.
 	 */
@@ -39,7 +40,7 @@ class Modal_Buddy {
 	/**
 	 * BuddyPress db version
 	 */
-	public static $bp_db_version_required = 10000;
+	public static $bp_db_version_required = 12385;
 
 	/**
 	 * Initialize the plugin
@@ -59,7 +60,7 @@ class Modal_Buddy {
 
 		// If the single instance hasn't been set, set it now.
 		if ( null == self::$instance ) {
-			self::$instance = new self;
+			self::$instance = new self();
 		}
 
 		return self::$instance;
@@ -72,7 +73,7 @@ class Modal_Buddy {
 	 */
 	private function setup_globals() {
 		/** Plugin globals ********************************************/
-		$this->version       = '1.0.0-alpha';
+		$this->version       = '1.0.0';
 		$this->domain        = 'modal-buddy';
 		$this->name          = 'Modal Buddy';
 		$this->file          = __FILE__;
@@ -86,9 +87,6 @@ class Modal_Buddy {
 		$this->plugin_css    = trailingslashit( $this->plugin_url . 'css' );
 		$this->is_modal      = false;
 		$this->minified      = defined( 'SCRIPT_DEBUG' ) && SCRIPT_DEBUG ? '' : '.min';
-
-		/** Plugin config ********************************************/
-		$this->config = $this->network_check();
 
 		/** Blogs Component *****************************************/
 		if ( is_multisite() && bp_is_active( 'blogs' ) ) {
@@ -113,53 +111,23 @@ class Modal_Buddy {
 	}
 
 	/**
-	 * Checks if current blog is the one where BuddyPress is activated
-	 *
-	 * @since 1.0.0
-	 */
-	public function network_check() {
-		/*
-		 * network_active : this plugin is activated on the network
-		 * network_status : BuddyPress & this plugin share the same network status
-		 */
-		$config = array( 'network_active' => false, 'network_status' => true );
-		$network_plugins = get_site_option( 'active_sitewide_plugins', array() );
-
-		// No Network plugins
-		if ( empty( $network_plugins ) ) {
-			return $config;
-		}
-
-		$check = array( buddypress()->basename, $this->basename );
-		$network_active = array_diff( $check, array_keys( $network_plugins ) );
-
-		if ( count( $network_active ) == 1 ) {
-			$config['network_status'] = false;
-		}
-
-		$config['network_active'] = isset( $network_plugins[ $this->basename ] );
-
-		return $config;
-	}
-
-	/**
 	 * Include needed files
 	 *
 	 * @since 1.0.0
 	 */
 	private function includes() {
-		if ( ! $this->version_check() || ! $this->config['network_status'] ) {
+		if ( ! $this->version_check() ) {
 			return;
 		}
 
-		require( $this->includes_dir . 'functions.php' );
-		require( $this->includes_dir . 'screens.php'   );
-		require( $this->includes_dir . 'templates.php' );
-		require( $this->includes_dir . 'actions.php'   );
+		require $this->includes_dir . 'functions.php';
+		require $this->includes_dir . 'screens.php';
+		require $this->includes_dir . 'templates.php';
+		require $this->includes_dir . 'actions.php';
 
 		// Make sure to be in an admin screen
-		if ( is_admin() && ( ! defined( 'DOING_AJAX' ) || ! DOING_AJAX ) ) {
-			require( $this->includes_dir . 'admin.php' );
+		if ( is_admin() && ! wp_doing_ajax() ) {
+			require $this->includes_dir . 'admin.php' ;
 		}
 
 		// Blog avatars!
@@ -174,8 +142,8 @@ class Modal_Buddy {
 	 * @since 1.0.0
 	 */
 	private function setup_hooks() {
-		// This plugin && BuddyPress share the same config & BuddyPress version is ok
-		if ( $this->version_check() && $this->config['network_status'] ) {
+		// BuddyPress version is ok
+		if ( $this->version_check() ) {
 			// Register the template directory
 			add_action( 'bp_register_theme_directory', array( $this, 'register_template_dir' )    );
 
@@ -193,7 +161,7 @@ class Modal_Buddy {
 
 		// There's something wrong, inform the Administrator
 		} else {
-			add_action( $this->config['network_active'] ? 'network_admin_notices' : 'admin_notices', array( $this, 'admin_warning' ) );
+			add_action( 'admin_notices', array( $this, 'admin_warning' ) );
 		}
 
 		// load the languages..
@@ -320,10 +288,6 @@ class Modal_Buddy {
 			$warnings[] = sprintf( __( '%s requires at least version %s of BuddyPress.', 'modal-buddy' ), $this->name, '2.4.0' );
 		}
 
-		if ( bp_is_network_activated() && ! is_plugin_active_for_network( $this->basename ) ) {
-			$warnings[] = sprintf( __( '%s and BuddyPress need to share the same network configuration.', 'modal-buddy' ), $this->name );
-		}
-
 		if ( ! empty( $warnings ) ) :
 		?>
 		<div id="message" class="error">
@@ -356,8 +320,6 @@ class Modal_Buddy {
 		load_textdomain( $this->domain, $mofile_local );
 	}
 }
-
-endif;
 
 // Let's start !
 function modal_buddy() {

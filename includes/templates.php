@@ -9,7 +9,9 @@
  */
 
 // Exit if accessed directly
-defined( 'ABSPATH' ) || exit;
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 
 /**
  * Output the modal iframe title tag
@@ -254,7 +256,7 @@ function modal_buddy_user_avatar_button_is_disabled() {
 	$is_disabled = (bool) ! bp_is_my_profile();
 
 	if ( false === $is_disabled ) {
-		$is_disabled = ! bp_is_active( 'xprofile' ) || ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || bp_disable_avatar_uploads();
+		$is_disabled = ! bp_is_active( 'xprofile' ) || ! buddypress()->avatar->show_avatars || bp_disable_avatar_uploads();
 	}
 
 	/**
@@ -280,7 +282,7 @@ function modal_buddy_group_avatar_button_is_disabled() {
 	$is_disabled = (bool) ! groups_is_user_admin( bp_loggedin_user_id(), bp_get_current_group_id() ) && ! is_super_admin();
 
 	if ( false === $is_disabled ) {
-		$is_disabled = ! buddypress()->avatar->show_avatars || ! bp_attachments_is_wp_version_supported() || bp_disable_group_avatar_uploads();
+		$is_disabled = ! buddypress()->avatar->show_avatars || bp_disable_group_avatar_uploads();
 	}
 
 	/**

@@ -209,7 +209,7 @@ class Modal_Buddy_Admin {
 			) );
 
 			// Add the Modal Buddy link to edit the avatar
-			if ( ! bp_core_get_root_option( 'bp-disable-avatar-uploads' ) && bp_attachments_is_wp_version_supported() ) :
+			if ( ! bp_core_get_root_option( 'bp-disable-avatar-uploads' ) ) :
 				modal_buddy_link( array(
 					'item_id'       => $user->ID,
 					'object'        => 'user',
@@ -392,7 +392,7 @@ class Modal_Buddy_Admin {
 	 * @since 1.0.0
 	 */
 	public function groups_add_meta_boxes() {
-		if ( ! bp_disable_group_avatar_uploads() && $this->show_avatars && bp_attachments_is_wp_version_supported() ) {
+		if ( ! bp_disable_group_avatar_uploads() && $this->show_avatars ) {
 			// Metabox to manage the group's avatar
 			add_meta_box(
 				'bp_group_avatar',
